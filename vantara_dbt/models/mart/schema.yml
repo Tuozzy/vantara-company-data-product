@@ -3,42 +3,72 @@ version: 2
 models:
   - name: golden_company_record
     description: >
-      The Vantara Finance golden company record — the single, authoritative, 
-      governed source of company data for all departments. Built on Companies 
-      House public bulk data. Contains 8 Critical Data Elements with quality 
-      flags and derived fields. Refreshed weekly.
+      The Vantara Finance golden company record — the single, authoritative,
+      governed source of company data for all six departments at Vantara Finance.
+
+      Built on Companies House public bulk data register (5.7 million records)
+      processed through the stg_companies_house staging model. Applies Vantara
+      status mapping, name normalisation flags, derived field computation,
+      and quality indicator flags defined in the governance documentation.
+
+      This is the consumption layer for all Vantara departments — Relationship
+      Management, Credit Risk, Compliance and KYC, Finance and Treasury,
+      Operations and Technology, and the planned AI credit scoring model.
+
+      Governance documentation:
+        CDEs: governance/cde_definitions.md
+        Survivorship rules: governance/survivorship_rules.md
+        Quality specification: governance/quality_spec.md
+        Data catalogue: governance/data_catalogue_entry.md
+
+      Data Product Owner: James Whitfield, CRO
+      Data Steward: Vantara Finance Data Team
+      Refresh cadence: Weekly — Monday 06:00 UTC
+      Quality gate: Automated — hard stop on critical CDE failures
+      Live catalogue: https://tuozzy.github.io/vantara-company-data-product/
+
     columns:
+
       - name: company_number
         description: >
-          CDE 1 — Unique Companies House identifier. The golden key linking 
-          a company across all Vantara systems. 8 characters, leading zeros 
+          CDE 1 — Unique Companies House identifier. The golden key linking
+          a company across all Vantara systems. 8 characters, leading zeros
           preserved. Never changes even if company name changes.
+          Quality threshold: 100% complete, 100% unique. HARD STOP gate.
 
       - name: registered_name
         description: >
-          CDE 2 — Full legal name as filed at Companies House. Not the trading 
-          name. Trimmed of whitespace. All-caps names flagged for normalisation.
+          CDE 2 — Full legal name as filed at Companies House. Not the trading
+          name. Trimmed of whitespace. Used in all legal documents, credit
+          agreements, and regulatory submissions.
+          Quality threshold: 100% complete for active companies. HARD STOP gate.
 
       - name: registered_name_raw
         description: >
-          Original unmodified company name from Companies House source file. 
+          Original unmodified company name from Companies House source file.
           Preserved for audit purposes alongside the cleaned registered_name.
+          Enables full traceability of any normalisation applied.
 
       - name: company_status_raw
         description: >
-          Raw company status value exactly as returned by Companies House 
+          Raw company status value exactly as returned by Companies House
           before Vantara classification mapping is applied.
+          Retained for audit trail and mapping table debugging.
 
       - name: company_status_vantara
         description: >
-          CDE 3 — Company status mapped to Vantara's agreed classification. 
-          Values: ACTIVE, RESTRICTED, INACTIVE, UNMAPPED. 
-          UNMAPPED records require Data Steward review before publication.
+          CDE 3 — Company status mapped to Vantara agreed classification.
+          Values: ACTIVE, RESTRICTED, INACTIVE, UNMAPPED.
+          Mapping table documented in governance/survivorship_rules.md Rule 3.
+          UNMAPPED records require Data Steward review and are excluded
+          from active portfolio reporting until resolved.
+          Quality threshold: 100% mapped. HARD STOP gate.
 
       - name: address_line_1
         description: >
-          CDE 4 — First line of the current registered office address as on 
+          CDE 4 — First line of current registered office address as on
           the Companies House register. Not the last filed address.
+          Quality threshold: 98% populated for active companies. WARNING gate.
 
       - name: address_line_2
         description: Second line of registered office address where present.
@@ -54,80 +84,90 @@ models:
 
       - name: post_code
         description: >
-          CDE 4 — Postcode of the registered office address. 
-          Quality threshold 95% populated for active companies. 
-          Null values flagged via address_incomplete field.
+          CDE 4 — Postcode of the current registered office address.
+          Quality threshold: 95% populated for active companies. WARNING gate.
+          Null values for active companies flagged via address_incomplete field.
+          Used by Compliance team for KYC address verification.
 
       - name: sic_code_primary
         description: >
-          CDE 5 — Primary Standard Industrial Classification code. 
-          Derived using promotion logic — SicText_1 used where populated, 
-          falling back through SicText_2, 3, 4. UNKNOWN assigned where 
-          all four fields are null.
+          CDE 5 — Primary Standard Industrial Classification code.
+          Derived using promotion logic — SicText_1 used where populated,
+          falling back through SicText_2, 3, 4. UNKNOWN assigned where
+          all four fields are null. See Survivorship Rule 5.
+          Quality threshold: 90% populated for active companies. WARNING gate.
+          Used by Finance for portfolio segmentation and Halcyon board pack.
 
       - name: incorporation_date
         description: >
-          CDE 6 — Date company was registered at Companies House. 
-          Used to calculate company_age_years. 
-          Quality threshold 100% — hard stop on null values.
+          CDE 6 — Date company was registered at Companies House.
+          Used to calculate company_age_years derived field.
+          Quality threshold: 100% complete. HARD STOP gate.
+          Critical input to Vantara credit scoring model features.
 
       - name: last_accounts_date
         description: >
-          CDE 7 — Date to which most recent annual accounts were prepared. 
-          Null for companies incorporated less than 18 months ago. 
-          Companies over 18 months old with null value flagged via 
-          accounts_overdue_review field.
+          CDE 7 — Date to which most recent annual accounts were prepared.
+          Null expected for companies incorporated less than 18 months ago.
+          Companies over 18 months with null flagged via accounts_overdue_review.
+          Quality threshold: 85% for active companies 18 months or older.
 
       - name: confirmation_statement_date
         description: >
-          CDE 8 — Date of most recent confirmation statement filing. 
-          Primary input to is_actively_maintained derived field. 
-          Basis for Vantara's agreed definition of an actively maintained company.
+          CDE 8 — Date of most recent confirmation statement filing.
+          Primary input to is_actively_maintained derived field.
+          Agreed definition resolving the historic conflict between
+          Credit Risk and Compliance active/inactive definitions.
+          Quality threshold: 85% for active companies. WARNING gate.
 
       - name: is_actively_maintained
         description: >
-          Derived field — True if company_status_vantara = ACTIVE and 
-          confirmation_statement_date is within the last 12 months. 
-          Agreed definition resolving the historic conflict between 
-          Credit Risk and Compliance active/inactive definitions.
+          Derived field — True if company_status_vantara = ACTIVE and
+          confirmation_statement_date is within the last 12 months.
+          Single agreed definition replacing three inconsistent department
+          definitions. Documented in Survivorship Rule 4.
+          Used by Credit Risk for eligibility and Compliance for KYC refresh.
 
       - name: company_age_years
         description: >
-          Derived field — Years since incorporation_date at point of 
-          most recent data refresh. Used as a feature in the 
-          Vantara credit scoring model.
+          Derived field — Years since incorporation_date at point of
+          most recent data refresh. Key feature input to the Vantara
+          credit scoring model currently in development.
 
       - name: address_incomplete
         description: >
-          Quality flag — True if post_code is null for an active company. 
+          Quality flag — True if post_code is null for an active company.
           Indicates a KYC address gap requiring Compliance team review.
+          Directly addresses the 18% address discrepancy identified in
+          the Vantara problem statement.
 
       - name: sic_requires_review
         description: >
-          Quality flag — True if sic_code_primary = UNKNOWN. 
-          Record included in golden record but excluded from 
-          sector segmentation reporting until resolved.
+          Quality flag — True if sic_code_primary = UNKNOWN.
+          Record included in golden record but excluded from sector
+          segmentation reporting until Data Steward resolves the code.
 
       - name: accounts_overdue_review
         description: >
-          Quality flag — True if last_accounts_date is null and company 
-          has been incorporated for more than 18 months. 
-          Triggers enhanced due diligence flag for Compliance team.
+          Quality flag — True if last_accounts_date is null and company
+          has been incorporated for more than 18 months.
+          Triggers enhanced due diligence flag for Compliance team under
+          Vantara risk-based monitoring policy.
 
       - name: status_unmapped
         description: >
-          Quality flag — True if company_status_vantara = UNMAPPED. 
-          Record excluded from active golden record until Data Steward 
-          resolves the status mapping.
+          Quality flag — True if company_status_vantara = UNMAPPED.
+          Record excluded from active golden record until Data Steward
+          resolves the status mapping. 2,612 records flagged on first run.
 
       - name: name_requires_normalisation
         description: >
-          Quality flag — True if registered_name is all uppercase and 
-          longer than 4 characters. Flags records for name normalisation 
-          to Title Case by the Data Steward.
+          Quality flag — True if registered_name is all uppercase and
+          longer than 4 characters. Flags records requiring normalisation
+          to Title Case by the Data Steward per Survivorship Rule 2.
 
       - name: dbt_loaded_date
-        description: Date the record was loaded into the staging model.
+        description: Date the record was loaded through the staging model.
 
       - name: dbt_updated_at
-        description: Timestamp of the most recent golden record refresh.
+        description: Timestamp of the most recent golden record computation.
