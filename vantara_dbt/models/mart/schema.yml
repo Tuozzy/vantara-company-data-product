@@ -1,0 +1,133 @@
+version: 2
+
+models:
+  - name: golden_company_record
+    description: >
+      The Vantara Finance golden company record — the single, authoritative, 
+      governed source of company data for all departments. Built on Companies 
+      House public bulk data. Contains 8 Critical Data Elements with quality 
+      flags and derived fields. Refreshed weekly.
+    columns:
+      - name: company_number
+        description: >
+          CDE 1 — Unique Companies House identifier. The golden key linking 
+          a company across all Vantara systems. 8 characters, leading zeros 
+          preserved. Never changes even if company name changes.
+
+      - name: registered_name
+        description: >
+          CDE 2 — Full legal name as filed at Companies House. Not the trading 
+          name. Trimmed of whitespace. All-caps names flagged for normalisation.
+
+      - name: registered_name_raw
+        description: >
+          Original unmodified company name from Companies House source file. 
+          Preserved for audit purposes alongside the cleaned registered_name.
+
+      - name: company_status_raw
+        description: >
+          Raw company status value exactly as returned by Companies House 
+          before Vantara classification mapping is applied.
+
+      - name: company_status_vantara
+        description: >
+          CDE 3 — Company status mapped to Vantara's agreed classification. 
+          Values: ACTIVE, RESTRICTED, INACTIVE, UNMAPPED. 
+          UNMAPPED records require Data Steward review before publication.
+
+      - name: address_line_1
+        description: >
+          CDE 4 — First line of the current registered office address as on 
+          the Companies House register. Not the last filed address.
+
+      - name: address_line_2
+        description: Second line of registered office address where present.
+
+      - name: post_town
+        description: Post town of the registered office address.
+
+      - name: county
+        description: County of the registered office address where present.
+
+      - name: country
+        description: Country of the registered office address.
+
+      - name: post_code
+        description: >
+          CDE 4 — Postcode of the registered office address. 
+          Quality threshold 95% populated for active companies. 
+          Null values flagged via address_incomplete field.
+
+      - name: sic_code_primary
+        description: >
+          CDE 5 — Primary Standard Industrial Classification code. 
+          Derived using promotion logic — SicText_1 used where populated, 
+          falling back through SicText_2, 3, 4. UNKNOWN assigned where 
+          all four fields are null.
+
+      - name: incorporation_date
+        description: >
+          CDE 6 — Date company was registered at Companies House. 
+          Used to calculate company_age_years. 
+          Quality threshold 100% — hard stop on null values.
+
+      - name: last_accounts_date
+        description: >
+          CDE 7 — Date to which most recent annual accounts were prepared. 
+          Null for companies incorporated less than 18 months ago. 
+          Companies over 18 months old with null value flagged via 
+          accounts_overdue_review field.
+
+      - name: confirmation_statement_date
+        description: >
+          CDE 8 — Date of most recent confirmation statement filing. 
+          Primary input to is_actively_maintained derived field. 
+          Basis for Vantara's agreed definition of an actively maintained company.
+
+      - name: is_actively_maintained
+        description: >
+          Derived field — True if company_status_vantara = ACTIVE and 
+          confirmation_statement_date is within the last 12 months. 
+          Agreed definition resolving the historic conflict between 
+          Credit Risk and Compliance active/inactive definitions.
+
+      - name: company_age_years
+        description: >
+          Derived field — Years since incorporation_date at point of 
+          most recent data refresh. Used as a feature in the 
+          Vantara credit scoring model.
+
+      - name: address_incomplete
+        description: >
+          Quality flag — True if post_code is null for an active company. 
+          Indicates a KYC address gap requiring Compliance team review.
+
+      - name: sic_requires_review
+        description: >
+          Quality flag — True if sic_code_primary = UNKNOWN. 
+          Record included in golden record but excluded from 
+          sector segmentation reporting until resolved.
+
+      - name: accounts_overdue_review
+        description: >
+          Quality flag — True if last_accounts_date is null and company 
+          has been incorporated for more than 18 months. 
+          Triggers enhanced due diligence flag for Compliance team.
+
+      - name: status_unmapped
+        description: >
+          Quality flag — True if company_status_vantara = UNMAPPED. 
+          Record excluded from active golden record until Data Steward 
+          resolves the status mapping.
+
+      - name: name_requires_normalisation
+        description: >
+          Quality flag — True if registered_name is all uppercase and 
+          longer than 4 characters. Flags records for name normalisation 
+          to Title Case by the Data Steward.
+
+      - name: dbt_loaded_date
+        description: Date the record was loaded into the staging model.
+
+      - name: dbt_updated_at
+        description: Timestamp of the most recent golden record refresh.
