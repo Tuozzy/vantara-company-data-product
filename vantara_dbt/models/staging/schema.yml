@@ -1,0 +1,119 @@
+version: 2
+
+models:
+  - name: stg_companies_house
+    description: >
+      Staging model for Companies House bulk data — the first
+      transformation layer in the Vantara Company Data Product pipeline.
+
+      Reads the Companies House BasicCompanyDataAsOneFile bulk extract
+      (5.7 million UK registered company records, updated monthly) and
+      applies field selection, renaming, data type casting, whitespace
+      trimming, and SIC code promotion logic before passing to the
+      golden_company_record mart model.
+
+      Governance: all field selections and cleaning rules are traceable
+      to CDE definitions in governance/cde_definitions.md and
+      survivorship rules in governance/survivorship_rules.md.
+
+      Owner: Data Steward (Vantara Finance)
+      Refresh cadence: Weekly — Monday 06:00 UTC
+      Source: Companies House public bulk data register
+    columns:
+      - name: company_number
+        description: >
+          Trimmed and zero-padded to 8 characters. Golden key for all
+          downstream joins. Preserves leading zeros lost by some systems.
+          Maps to CDE 1 in governance/cde_definitions.md.
+
+      - name: registered_name
+        description: >
+          Trimmed registered company name. Whitespace removed from
+          leading and trailing positions. All-caps names flagged
+          for normalisation in the mart model.
+          Maps to CDE 2 in governance/cde_definitions.md.
+
+      - name: registered_name_raw
+        description: >
+          Original unmodified CompanyName value from Companies House
+          source file. Preserved alongside registered_name for full
+          audit trail of any normalisation applied downstream.
+
+      - name: company_status_raw
+        description: >
+          Raw CompanyStatus value exactly as returned by Companies House
+          before Vantara classification mapping is applied in the mart.
+          Maps to CDE 3 in governance/cde_definitions.md.
+
+      - name: address_line_1
+        description: >
+          First line of current registered office address.
+          Trimmed of whitespace.
+          Part of CDE 4 in governance/cde_definitions.md.
+
+      - name: address_line_2
+        description: >
+          Second line of registered office address where present.
+          Trimmed of whitespace.
+          Part of CDE 4 in governance/cde_definitions.md.
+
+      - name: post_town
+        description: >
+          Post town of the registered office address.
+          Trimmed of whitespace.
+          Part of CDE 4 in governance/cde_definitions.md.
+
+      - name: county
+        description: >
+          County of the registered office address where present.
+          Trimmed of whitespace.
+          Part of CDE 4 in governance/cde_definitions.md.
+
+      - name: country
+        description: >
+          Country of the registered office address.
+          Trimmed of whitespace.
+          Part of CDE 4 in governance/cde_definitions.md.
+
+      - name: post_code
+        description: >
+          Postcode of the registered office address. Trimmed of whitespace.
+          Quality threshold 95% populated for active companies.
+          Null values flagged via address_incomplete field in mart.
+          Part of CDE 4 in governance/cde_definitions.md.
+
+      - name: sic_code_primary
+        description: >
+          Primary SIC code derived using promotion logic across
+          SicText_1 through SicText_4 from Companies House source.
+          Survivorship rule: use first non-null value across the four
+          SIC fields. UNKNOWN assigned where all four fields are null.
+          Maps to CDE 5 in governance/cde_definitions.md.
+          Survivorship Rule 5 in governance/survivorship_rules.md.
+
+      - name: incorporation_date
+        description: >
+          Date the company was registered at Companies House.
+          Used to calculate company_age_years in mart model.
+          Quality threshold 100% — hard stop if null in mart.
+          Maps to CDE 6 in governance/cde_definitions.md.
+
+      - name: last_accounts_date
+        description: >
+          Date to which most recent annual accounts were prepared.
+          Null expected for companies incorporated less than 18 months ago.
+          Companies over 18 months with null value flagged in mart.
+          Maps to CDE 7 in governance/cde_definitions.md.
+
+      - name: confirmation_statement_date
+        description: >
+          Date of most recent confirmation statement filing.
+          Primary input to is_actively_maintained derived field in mart.
+          Basis for Vantara agreed definition of actively maintained company.
+          Maps to CDE 8 in governance/cde_definitions.md.
+          Survivorship Rule 4 in governance/survivorship_rules.md.
+
+      - name: dbt_loaded_date
+        description: >
+          Date the record was processed through the staging model.
+          Used for data freshness monitoring and lineage audit trail.
