@@ -1,0 +1,112 @@
+{
+  "run_date": "2026-10-01T09:29:58.091446",
+  "total_companies": 5689366,
+  "active_companies": 5573546,
+  "summary": {
+    "passed": 8,
+    "warnings": 1,
+    "hard_failures": 1
+  },
+  "checks": [
+    {
+      "cde": "CDE 1",
+      "check": "Company Number \u2014 Completeness",
+      "dimension": "Completeness",
+      "threshold": "100.0%",
+      "actual": "100.0%",
+      "status": "PASS",
+      "rag": "GREEN",
+      "gate": "HARD"
+    },
+    {
+      "cde": "CDE 1",
+      "check": "Company Number \u2014 Uniqueness",
+      "dimension": "Uniqueness",
+      "threshold": "100.0%",
+      "actual": "100.0%",
+      "status": "PASS",
+      "rag": "GREEN",
+      "gate": "HARD"
+    },
+    {
+      "cde": "CDE 2",
+      "check": "Registered Name \u2014 Completeness",
+      "dimension": "Completeness",
+      "threshold": "100.0%",
+      "actual": "100.0%",
+      "status": "PASS",
+      "rag": "GREEN",
+      "gate": "HARD"
+    },
+    {
+      "cde": "CDE 3",
+      "check": "Company Status \u2014 No Unmapped Values",
+      "dimension": "Validity",
+      "threshold": "100.0%",
+      "actual": "100.0%",
+      "status": "FAIL",
+      "rag": "AMBER",
+      "gate": "HARD"
+    },
+    {
+      "cde": "CDE 4",
+      "check": "Registered Address \u2014 PostCode Completeness",
+      "dimension": "Completeness",
+      "threshold": "95.0%",
+      "actual": "98.4%",
+      "status": "PASS",
+      "rag": "GREEN",
+      "gate": "WARN"
+    },
+    {
+      "cde": "CDE 4",
+      "check": "Registered Address \u2014 AddressLine1 Completeness",
+      "dimension": "Completeness",
+      "threshold": "98.0%",
+      "actual": "98.9%",
+      "status": "PASS",
+      "rag": "GREEN",
+      "gate": "WARN"
+    },
+    {
+      "cde": "CDE 5",
+      "check": "SIC Code \u2014 Completeness",
+      "dimension": "Completeness",
+      "threshold": "90.0%",
+      "actual": "100.0%",
+      "status": "PASS",
+      "rag": "GREEN",
+      "gate": "WARN"
+    },
+    {
+      "cde": "CDE 6",
+      "check": "Incorporation Date \u2014 Completeness",
+      "dimension": "Completeness",
+      "threshold": "100.0%",
+      "actual": "100.0%",
+      "status": "PASS",
+      "rag": "GREEN",
+      "gate": "HARD"
+    },
+    {
+      "cde": "CDE 7",
+      "check": "Last Accounts Date \u2014 Completeness",
+      "dimension": "Completeness",
+      "threshold": "85.0%",
+      "actual": "91.8%",
+      "status": "PASS",
+      "rag": "GREEN",
+      "gate": "WARN"
+    },
+    {
+      "cde": "CDE 8",
+      "check": "Confirmation Statement Date \u2014 Completeness",
+      "dimension": "Completeness",
+      "threshold": "85.0%",
+      "actual": "81.7%",
+      "status": "FAIL",
+      "rag": "AMBER",
+      "gate": "WARN"
+    }
+  ]
+}
