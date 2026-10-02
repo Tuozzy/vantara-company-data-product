@@ -112,12 +112,12 @@ owner. Every quality score has someone accountable for it.
 - [x] Stakeholder and department analysis  
 - [x] CDE definitions (8 CDEs)
 - [x] Survivorship rules
-- [ ] Quality specification
-- [ ] Data catalogue entry
-- [ ] dbt staging models
-- [ ] dbt golden record mart
-- [ ] Great Expectations quality suite
-- [ ] dbt docs published via GitHub Pages
+- [x] Quality specification
+- [x] Data catalogue entry
+- [x] dbt staging models
+- [x] dbt golden record mart
+- [x] Great Expectations quality suite
+- [x] dbt docs published via GitHub Pages
 
 ---
 
